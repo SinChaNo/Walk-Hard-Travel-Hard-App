@@ -5,8 +5,11 @@ import { useState } from 'react';
 
 export default function App() {
   const [working, setWorking] = useState(true);
+  const [text, setText] = useState("");
+
   const travel = () => setWorking(false);
   const work = () => setWorking(true);
+  const onChangeText = (event) => console.log(event);
   
   return (
     <View style={styles.container}>
@@ -22,7 +25,13 @@ export default function App() {
       </View>
       {/* Input */}
       <View>
-        <TextInput style={styles.input} placeholder={working ? "Add a To Do" : "Where Do you Want Go?"} />
+        <TextInput 
+          style={styles.input} 
+          placeholder={working ? "Add a To Do" : "Where Do you Want Go?"} 
+          // keyboardType='number-pad'
+          multiline
+          onChangeText={onChangeText}
+        />
       </View>
     </View>
   );
@@ -49,5 +58,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 30,
+    fontSize: 15,
   },
 });
