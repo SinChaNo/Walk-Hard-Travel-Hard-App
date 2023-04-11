@@ -14,24 +14,63 @@ import { useEffect, useState } from 'react';
 import { Fontisto } from '@expo/vector-icons';
 
 const STORAGE_KEY = "@toDos";
+const VIEW_KEY = "@lastView";
 
 export default function App() {
   const [working, setWorking] = useState(true);
   const [text, setText] = useState("");
   const [toDos, setToDos] = useState({});
+  const [lastView, setLastView] = useState(Boolean);
   
-  const travel = () => setWorking(false);
-  const work = () => setWorking(true);
-  const onChangeText = (payload) => setText(payload);
-
   useEffect(() => {
     loadToDos();
+    loadLastView();
     console.log(toDos);
-  }, [])
+  }, []);
   
+  const work = () => {
+    setWorking(true);
+    setLastView(working);
+    console.log("---버튼 누른 후---")
+    console.log(lastView);
+    saveLastView(lastView);
+  }
+  const travel = () => {
+    setWorking(false);
+    setLastView(working);    
+    console.log("---버튼 누른 후---")
+    console.log(lastView);
+    saveLastView(lastView);
+  }
+    
+
+  const onChangeText = (payload) => setText(payload);
+
+  // 마지막 뷰 정보 저장
+  const saveLastView = async (lastView) => {
+    try {
+      const e = await AsyncStorage.setItem(VIEW_KEY, JSON.stringify(lastView));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // 마지막 뷰 정보 불러오기
+  const loadLastView = async() => {
+    try {
+      const lastView = await AsyncStorage.getItem(VIEW_KEY);
+      console.log("---불러오기---");
+      setWorking(JSON.parse(lastView));// working 상태 변경
+    } catch (e) {
+      console.log("---불러온 후---");
+      console.log(working); 
+      console.error(e);
+    }
+  }
+
   // 로컬 스토리지 저장
   const saveTodos = async (toSave) => {
-    const s = AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
+    const s = AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     console.log(s);
   };
   
@@ -46,13 +85,7 @@ export default function App() {
     if(text == ""){
       return;
     }
-    
-    // save to do
-    // const newToDos = Object.assign(
-    //   {}, 
-    //   toDos, 
-    //   {[Date.now()]: {text, work:working}}
-    // );
+
     const newToDos = {
       ...toDos,
       [Date.now()]: { text, work: working},
@@ -75,6 +108,15 @@ export default function App() {
       }]
     )
     return;
+  }
+
+  // 마지막 선택한 작업에 따라 적절한 헤더 텍스트 표시
+  const getHeader = () => {
+    if (lastView === null || lastView === true) {
+      return setWorking(true);
+    } else {
+      return setWorking(false);
+    }
   }
     
     return (
@@ -108,7 +150,7 @@ export default function App() {
               <Text style={styles.toDoText}>{toDos[key].text}</Text>
               <TouchableOpacity onPress={() => deleteToDo(key)}>
                 <Text>
-                  <Fontisto name="trash" size={24} color={theme.gray} />
+                  <Fontisto name="trash" size={18} color={theme.gray} />
                 </Text>
               </TouchableOpacity>
             </View> 
@@ -151,6 +193,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: "center",
     justifyContent: "space-between",
+    borderRadius: 20,
   },
   toDoText: {
     color: "white",
