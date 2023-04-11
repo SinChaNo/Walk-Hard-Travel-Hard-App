@@ -34,6 +34,8 @@ export default function App() {
     console.log("---버튼 누른 후---")
     console.log(lastView);
     saveLastView(lastView);
+
+    console.log(toDos);
   }
   const travel = () => {
     setWorking(false);
@@ -79,8 +81,10 @@ export default function App() {
     const s = await AsyncStorage.getItem(STORAGE_KEY);
     setToDos(JSON.parse(s));
     s !== null ? setToDos(JSON.parse(s)) : null;
+    console.log(toDos);
   }
 
+  // 항목 추가
   const addToDo = async () => {
     if(text == ""){
       return;
@@ -88,7 +92,11 @@ export default function App() {
 
     const newToDos = {
       ...toDos,
-      [Date.now()]: { text, work: working},
+      [(Date.now())]: { 
+        text, 
+        work: working,
+        done: false, 
+      },
     }
     setToDos(newToDos);
     await saveTodos(newToDos);
@@ -103,11 +111,21 @@ export default function App() {
       {text: "Sure", onPress: () => {
         const newToDos = {...toDos};
         delete newToDos[key];
+        delete newToDos["[object Object]"];
         setToDos(newToDos);
         saveTodos(newToDos);}
       }]
     )
     return;
+  }
+
+  // 목록 체크
+  const doneTodo = (key) => {
+    console.log(key);
+    const newTodos = {...toDos}
+    newTodos[key].done === true ? newTodos[key].done = false : newTodos[key].done = true;
+    setToDos(newTodos);
+    saveTodos(newTodos);
   }
 
   // 마지막 선택한 작업에 따라 적절한 헤더 텍스트 표시
@@ -147,6 +165,14 @@ export default function App() {
         {Object.keys(toDos).map(key => (
           toDos[key].work === working ? ( 
             <View style={styles.toDo} key={key}>
+              <TouchableOpacity onPress={() => doneTodo(key)} style={styles.checkBtn}>
+                <Text>
+                    {toDos[key].done === false ? 
+                      (<Fontisto name="checkbox-passive" size={18} color={theme.grey} />) 
+                      :
+                      (<Fontisto name="checkbox-active" size={18} color={theme.grey} />)}
+                </Text>
+              </TouchableOpacity>
               <Text style={styles.toDoText}>{toDos[key].text}</Text>
               <TouchableOpacity onPress={() => deleteToDo(key)}>
                 <Text>
@@ -185,17 +211,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 20,
   },
+  checkBtn: {
+    flex: 0.2,
+  },
   toDo: {
     backgroundColor:theme.toDoBg,
     marginBottom: 10,
-    paddingVertical: 20,
-    paddingHorizontal: 40,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     flexDirection: 'row',
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
     borderRadius: 20,
   },
   toDoText: {
+    flex:2,
     color: "white",
     fontSize: 15,
     fontWeight: "700",
