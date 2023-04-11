@@ -25,23 +25,16 @@ export default function App() {
   useEffect(() => {
     loadToDos();
     loadLastView();
-    console.log(toDos);
   }, []);
   
   const work = () => {
     setWorking(true);
     setLastView(working);
-    console.log("---버튼 누른 후---")
-    console.log(lastView);
     saveLastView(lastView);
-
-    console.log(toDos);
   }
   const travel = () => {
     setWorking(false);
-    setLastView(working);    
-    console.log("---버튼 누른 후---")
-    console.log(lastView);
+    setLastView(working);
     saveLastView(lastView);
   }
     
@@ -61,11 +54,8 @@ export default function App() {
   const loadLastView = async() => {
     try {
       const lastView = await AsyncStorage.getItem(VIEW_KEY);
-      console.log("---불러오기---");
       setWorking(JSON.parse(lastView));// working 상태 변경
     } catch (e) {
-      console.log("---불러온 후---");
-      console.log(working); 
       console.error(e);
     }
   }
@@ -73,7 +63,6 @@ export default function App() {
   // 로컬 스토리지 저장
   const saveTodos = async (toSave) => {
     const s = AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-    console.log(s);
   };
   
   // 로컬 스토리지 불러오기
@@ -81,7 +70,6 @@ export default function App() {
     const s = await AsyncStorage.getItem(STORAGE_KEY);
     setToDos(JSON.parse(s));
     s !== null ? setToDos(JSON.parse(s)) : null;
-    console.log(toDos);
   }
 
   // 항목 추가
@@ -103,6 +91,7 @@ export default function App() {
     setText("");
   }
 
+  // 목록 삭제
   const deleteToDo = (key) => {
     Alert.alert(
       "Delete To Do",
@@ -121,7 +110,6 @@ export default function App() {
 
   // 목록 체크
   const doneTodo = (key) => {
-    console.log(key);
     const newTodos = {...toDos}
     newTodos[key].done === true ? newTodos[key].done = false : newTodos[key].done = true;
     setToDos(newTodos);
@@ -168,15 +156,19 @@ export default function App() {
               <TouchableOpacity onPress={() => doneTodo(key)} style={styles.checkBtn}>
                 <Text>
                     {toDos[key].done === false ? 
-                      (<Fontisto name="checkbox-passive" size={18} color={theme.grey} />) 
+                      (<Fontisto name="checkbox-passive" size={18} color="white" />) 
                       :
                       (<Fontisto name="checkbox-active" size={18} color={theme.grey} />)}
                 </Text>
               </TouchableOpacity>
-              <Text style={styles.toDoText}>{toDos[key].text}</Text>
+              {toDos[key].done === false ? 
+                <Text style={styles.toDoText}>{toDos[key].text}</Text>
+                :
+                <Text style={styles.doneText} >{toDos[key].text}</Text>
+              }
               <TouchableOpacity onPress={() => deleteToDo(key)}>
                 <Text>
-                  <Fontisto name="trash" size={18} color={theme.gray} />
+                  <Fontisto name="trash" size={18} color={theme.dark} />
                 </Text>
               </TouchableOpacity>
             </View> 
@@ -229,5 +221,12 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 15,
     fontWeight: "700",
+  },
+  doneText: {
+    flex:2,
+    color: theme.dark,
+    fontSize: 15,
+    fontWeight: "400",
+    textDecorationLine: 'line-through',
   },
 });
