@@ -6,12 +6,14 @@ import {
   TouchableOpacity, 
   TextInput ,
   ScrollView,
-  Alert
+  Alert,
+  Modal
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from './color';
 import { useEffect, useState } from 'react';
 import { Fontisto } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
 
 const STORAGE_KEY = "@toDos";
 const VIEW_KEY = "@lastView";
@@ -21,6 +23,8 @@ export default function App() {
   const [text, setText] = useState("");
   const [toDos, setToDos] = useState({});
   const [lastView, setLastView] = useState(Boolean);
+  const [editMode, setEditMode] = useState(false);
+  const [editInput, setEditInput] = useState("");
   
   useEffect(() => {
     loadToDos();
@@ -31,15 +35,18 @@ export default function App() {
     setWorking(true);
     setLastView(working);
     saveLastView(lastView);
+    console.log(toDos);
   }
   const travel = () => {
     setWorking(false);
     setLastView(working);
     saveLastView(lastView);
+    console.log(toDos);
   }
     
 
   const onChangeText = (payload) => setText(payload);
+  const onEditText = (payload) => setEditInput(payload);
 
   // 마지막 뷰 정보 저장
   const saveLastView = async (lastView) => {
@@ -83,7 +90,8 @@ export default function App() {
       [(Date.now())]: { 
         text, 
         work: working,
-        done: false, 
+        done: false,
+        edit: false,
       },
     }
     setToDos(newToDos);
@@ -110,10 +118,20 @@ export default function App() {
 
   // 목록 체크
   const doneTodo = (key) => {
-    const newTodos = {...toDos}
+    const newTodos = {...toDos};
     newTodos[key].done === true ? newTodos[key].done = false : newTodos[key].done = true;
     setToDos(newTodos);
     saveTodos(newTodos);
+  }
+
+  // 수정 기능
+  const editToDo = (key) => {
+    //edit
+    const newTodos = {...toDos};
+    newTodos[key].text = editInput;
+    newTodos[key].edit = false;
+    setToDos(newTodos);
+    setEditInput("");
   }
 
   // 마지막 선택한 작업에 따라 적절한 헤더 텍스트 표시
@@ -137,22 +155,23 @@ export default function App() {
           <Text style={{ ...styles.btnText, color: !working ? "white" : theme.grey }}>Travel</Text>
         </TouchableOpacity>
       </View>
-      {/* Input */}
       <View>
-        <TextInput 
-          onSubmitEditing={addToDo}
-          style={styles.input} 
-          placeholder={working ? "Add a To Do" : "Where Do you Want Go?"} 
-          onChangeText={onChangeText}
-          returnKeyType='done'
-          value={text}
-        />
+      {/* Input */}
+      <TextInput 
+        onSubmitEditing={addToDo}
+        style={styles.input} 
+        placeholder={working ? "Add a To Do" : "Where Do you Want Go?"} 
+        onChangeText={onChangeText}
+        returnKeyType='done'
+        value={text}
+      />
       </View>
       {/* ToDo List */}
       <ScrollView>
-        {Object.keys(toDos).map(key => (
+        {toDos && Object.keys(toDos).map(key => (
           toDos[key].work === working ? ( 
             <View style={styles.toDo} key={key}>
+              {/* Check Btn */}
               <TouchableOpacity onPress={() => doneTodo(key)} style={styles.checkBtn}>
                 <Text>
                     {toDos[key].done === false ? 
@@ -161,11 +180,38 @@ export default function App() {
                       (<Fontisto name="checkbox-active" size={18} color={theme.grey} />)}
                 </Text>
               </TouchableOpacity>
-              {toDos[key].done === false ? 
-                <Text style={styles.toDoText}>{toDos[key].text}</Text>
-                :
-                <Text style={styles.doneText} >{toDos[key].text}</Text>
+              {/* Text */}
+              {!toDos[key].edit &&
+                [toDos[key].done === false ? 
+                  <Text style={styles.toDoText}>{toDos[key].text}</Text>
+                  :
+                  <Text style={styles.doneText} >{toDos[key].text}</Text>
+              ]}
+              {toDos[key].edit &&
+                <TextInput 
+                  style={styles.editInput}
+                  placeholder={editInput} 
+                  onChangeText={onEditText}
+                  returnKeyType='done'
+                  value={editInput}
+                />
               }
+              {/* Edit Btn */}
+              {!editMode &&
+                <TouchableOpacity onPress={() => {setEditMode(true); toDos[key].edit=true;}}>
+                  <Text style={styles.editBtn}>
+                    <AntDesign name="edit" size={18} color={theme.dark} />
+                  </Text>
+                </TouchableOpacity>
+              }
+              {toDos[key].edit &&
+                <TouchableOpacity onPress={() => {setEditMode(false); toDos[key].edit=false; editToDo(key);}}>
+                  <Text style={styles.editBtn}>
+                    <Fontisto name="save" size={18} color={theme.dark} />
+                  </Text>
+                </TouchableOpacity>
+              }
+              {/* Delete Btn */}
               <TouchableOpacity onPress={() => deleteToDo(key)}>
                 <Text>
                   <Fontisto name="trash" size={18} color={theme.dark} />
@@ -212,15 +258,15 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 20,
     flexDirection: 'row',
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "flex-start",
     borderRadius: 20,
   },
   toDoText: {
     flex:2,
     color: "white",
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "500",
   },
   doneText: {
     flex:2,
@@ -228,5 +274,17 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "400",
     textDecorationLine: 'line-through',
+  },
+  editBtn:{
+    marginRight: 10,
+  },
+  editInput: {
+    flex: 1,
+    backgroundColor:'white',
+    borderRadius: 10,
+    marginRight: 20,
+    paddingHorizontal: 10,
+    marginBottom: -4,
+    marginTop: -4,
   },
 });
